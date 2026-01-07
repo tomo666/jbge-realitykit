@@ -142,23 +142,26 @@ open class UIComponent {
         let name = objectName ?? String("UIComponent")
         self.ID = Int.random(in: 0..<Int.max)
 
+        // --- Unity-compatible UI camera viewport sizing ---
+        // Matches Unity: orthographicSize * 2 = viewport height in world units
+        let pixelUnit: Float = 1.0
+        
+        // Full viewport size in world units
+        ScaleScreenHeight = GE.UICamera.orthoSize * pixelUnit
+        ScaleScreenWidth = ScaleScreenHeight * GE.UICamera.aspect
+
+        // Logical UI space matches full viewport
+        ScaleHeight = ScaleScreenHeight
+        ScaleWidth = ScaleScreenWidth
+        
         // Create an empty UIPlane and set it in the hierarchy, if told to do so
         if isCreatePlaneForThisObject {
-            self.ThisObject = CreateUIPlane(name)
+            self.ThisObject = CreateUIPlane(name, Vector4(Float.random(in: 0..<1), Float.random(in: 0..<1), Float.random(in: 0..<1), 0.7))
         } else {
             // Otherwise, just create an empty GameObject
             self.ThisObject = GameObject(name)
             self.ThisObject.layer = 5
         }
-        
-        // Phase 1 default: treat the UI space as a 2x2 plane centered at origin.
-        // You can overwrite these from GameEngine later to match Unity camera/PPU behavior.
-        self.ScaleWidth = 2.0
-        self.ScaleHeight = 2.0
-
-        // Phase 1 placeholder for Unity camera viewport sizing
-        ScaleScreenWidth = ScaleWidth
-        ScaleScreenHeight = ScaleHeight
 
         if isControllerRequired {
             // Create a container to encapsulate this object so we can control the pivots
@@ -166,12 +169,21 @@ open class UIComponent {
             self.Controller = controller
 
             // If we don't have any parent object specified, then this container will be directly the child of the UICamera
-            controller.transform.SetParent(parentObj == nil ? GE.UICamera.transform : parentObj?.ThisObject.transform)
+            controller.transform.SetParent(parentObj == nil ? GE.MainGameObject.transform : parentObj?.ThisObject.transform)
             ThisObject.transform.SetParent(controller.transform)
+
+            // Unity: Controller positioned at center of viewport
+            controller.transform.localPosition = Vector3(0, 0, 0)
+
+            // Controller logical size equals viewport size
+            controller.localSize = Vector2(ScaleScreenWidth, ScaleScreenHeight)
         } else {
             // If we don't have any parent object specified, then this container will be directly the child of the UICamera
             ThisObject.transform.SetParent(parentObj?.ThisObject.transform)
         }
+
+        // Unity: UI element defaults to full viewport size
+        ThisObject.localSize = Vector2(ScaleScreenWidth, ScaleScreenHeight)
     }
 
     open func Update() {
@@ -442,22 +454,24 @@ open class UIComponent {
         ThisObject.Destroy()
         // Note: RealityKit entities are released automatically when no longer referenced
     }
-
+    
     /// <summary>
     /// Unity-compatible UI plane factory (RealityKit implementation).
     /// </summary>
     open func CreateUIPlane(
         _ objectName: String,
-        bgColor: Vector4? = Vector4.one
+        _ bgColor: Vector4? = Vector4.one
     ) -> GameObject {
-
         let go = GameObject(objectName)
 
         // --- Create a rectangular plane mesh (Unity-style UI layer) ---
-        // Plane is centered at origin, facing +Z, size = ScaleWidth x ScaleHeight
-        let width = ScaleWidth
-        let height = ScaleHeight
-
+        let fovRad = GE.UICamera.fieldOfView * .pi / 180.0
+        let z: Float = 1.0 //abs(Position.z)
+        let vHalfH = z * tan(fovRad / 2)
+        let vHalfW = vHalfH * GE.UICamera.aspect
+        let width  = vHalfW
+        let height = vHalfH
+        
         let vertices: [SIMD3<Float>] = [
             SIMD3(-width, -height, 0),
             SIMD3( width, -height, 0),
@@ -466,8 +480,8 @@ open class UIComponent {
         ]
 
         let indices: [UInt32] = [
-            2, 1, 0,
-            3, 2, 0
+            0, 1, 2,
+            0, 2, 3
         ]
 
         var meshDesc = MeshDescriptor()
@@ -479,15 +493,99 @@ open class UIComponent {
         // --- Material (simple unlit color, Unity placeholder equivalent) ---
         var material = UnlitMaterial()
         if let c = bgColor {
-            material.color = .init(tint: .init(red: CGFloat(c.x), green: CGFloat(c.y), blue: CGFloat(c.z), alpha: CGFloat(c.w)))
+            material.color = .init(tint: .init(red: CGFloat(c.x), green: CGFloat(c.y), blue: CGFloat(c.z), alpha: 1.0))
         }
 
         let model = ModelEntity(mesh: mesh, materials: [material])
         model.name = "\(objectName)_Model"
+        
+        // Apply alpha if set
+        model.components.set(OpacityComponent(opacity: Float(bgColor?.w ?? 1.0)))
 
         // Attach model under GameObject’s entity
         model.transform = .identity
         go.addChild(model)
+
+        // --- Debug outline (UI frame) ---
+        
+        // lineStrip は RealityKit の MeshDescriptor では使えないので、4本の細い板ポリで枠を作る
+        let borderZ: Float = 0.001
+        let thickness: Float = 0.02  // 好きに調整。大きすぎるとUIに被る
+
+        let halfW = width
+        let halfH = height
+        let t = thickness
+
+        // 外側矩形 (outer) と 内側矩形 (inner)
+        let outerL = -halfW
+        let outerR =  halfW
+        let outerB = -halfH
+        let outerT =  halfH
+
+        let innerL = outerL + t
+        let innerR = outerR - t
+        let innerB = outerB + t
+        let innerT = outerT - t
+
+        // 4本の枠ポリ: Top, Bottom, Left, Right をそれぞれ quad (2 triangles) で作る
+        // 各quadは (a,b,c,d) の4頂点で、trianglesは (0,1,2) (0,2,3)
+        func addQuad(_ verts: inout [SIMD3<Float>],
+                     _ indices: inout [UInt32],
+                     _ a: SIMD3<Float>, _ b: SIMD3<Float>, _ c: SIMD3<Float>, _ d: SIMD3<Float>) {
+            let base = UInt32(verts.count)
+            verts.append(contentsOf: [a,b,c,d])
+            indices.append(contentsOf: [
+                base + 0, base + 1, base + 2,
+                base + 0, base + 2, base + 3
+            ])
+        }
+
+        var borderVerts: [SIMD3<Float>] = []
+        var borderIndices: [UInt32] = []
+
+        // Top strip
+        addQuad(&borderVerts, &borderIndices,
+                SIMD3(outerL, innerT, borderZ),
+                SIMD3(outerR, innerT, borderZ),
+                SIMD3(outerR, outerT, borderZ),
+                SIMD3(outerL, outerT, borderZ))
+
+        // Bottom strip
+        addQuad(&borderVerts, &borderIndices,
+                SIMD3(outerL, outerB, borderZ),
+                SIMD3(outerR, outerB, borderZ),
+                SIMD3(outerR, innerB, borderZ),
+                SIMD3(outerL, innerB, borderZ))
+
+        // Left strip
+        addQuad(&borderVerts, &borderIndices,
+                SIMD3(outerL, innerB, borderZ),
+                SIMD3(innerL, innerB, borderZ),
+                SIMD3(innerL, innerT, borderZ),
+                SIMD3(outerL, innerT, borderZ))
+
+        // Right strip
+        addQuad(&borderVerts, &borderIndices,
+                SIMD3(innerR, innerB, borderZ),
+                SIMD3(outerR, innerB, borderZ),
+                SIMD3(outerR, innerT, borderZ),
+                SIMD3(innerR, innerT, borderZ))
+
+        var borderDesc = MeshDescriptor()
+        borderDesc.positions = MeshBuffer(borderVerts)
+        borderDesc.primitives = .triangles(borderIndices)
+
+        let borderMesh = try! MeshResource.generate(from: [borderDesc])
+
+        var borderMaterial = UnlitMaterial()
+        borderMaterial.color = .init(tint: .white)
+
+        let borderEntity = ModelEntity(mesh: borderMesh, materials: [borderMaterial])
+        borderEntity.name = "\(objectName)_Border"
+         go.addChild(borderEntity)
+        // ----- Debug end -----
+
+        
 
         // Unity RectTransform equivalent defaults
         go.localSize = Vector2(width * 2, height * 2)

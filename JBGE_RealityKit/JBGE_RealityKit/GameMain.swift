@@ -5,17 +5,19 @@
 //  Created by Tomohiro Kadono on 2026/01/03.
 //
 
+import RealityKit
+
 open class GameMain {
     private let binPath = "Assets/Bin/"
 
     // Virtual Machine to run our game script
     private(set) var gameVM: RealityKitGameVM? = nil
     private(set) var MainScriptFile: String = ""
-    private(set) var IsGameInitialized = false
+    public var IsGameInitialized = false
     
     private var TimeToWaitBeforeSceneStart: Int = 2
     private var TimeToWaitCounter: Float = 0.0
-
+    
     open func start(gameObject: GameObject) {
         if gameVM == nil {
             gameVM = RealityKitGameVM()
@@ -33,17 +35,25 @@ open class GameMain {
           // Set the target to constant value according to the current monitor display's refresh rate (i.e. 60 or 120)
           //gameVM.GE.TargetFrameRate = (int)Screen.currentResolution.refreshRateRatio.value;
         }
-        IsGameInitialized = true
         
         print("[GameMain] Start Completed.")
     }
     
-    open func Update() {
+    open func Update(_ deltaTime: Float) {
         if(gameVM?.GE == nil) { return }
         if(!IsGameInitialized) { return }
         
         // TODO: To be implemented later
         
-        
+        gameVM?.GE?.Update(deltaTime)
+    }
+    
+    open func FixedUpdate(_ deltaTime: Float) {
+        //gameVM?.GE?.FixedUpdate(deltaTime: deltaTime)
+    }
+    
+    open func UpdateScreenSize(width: Float, height: Float) {
+        guard let ge = gameVM?.GE else { return }
+        gameVM?.GE?.UpdateScreenSize(width: width, height: height)
     }
 }

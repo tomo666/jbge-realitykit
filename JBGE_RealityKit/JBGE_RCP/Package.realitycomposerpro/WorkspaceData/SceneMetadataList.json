@@ -1,9 +1,32 @@
 {
+  "0389A206-6B7C-4E28-8762-7CE819DBFFD0" : {
+    "objectMetadataList" : [
+      [
+        "0389A206-6B7C-4E28-8762-7CE819DBFFD0",
+        "Scene",
+        "CubeTest"
+      ],
+      {
+        "disallowsFraming" : false,
+        "isExpanded" : true,
+        "isLocked" : false
+      },
+      [
+        "0389A206-6B7C-4E28-8762-7CE819DBFFD0",
+        "Scene"
+      ],
+      {
+        "isExpanded" : true,
+        "isLocked" : false
+      }
+    ]
+  },
   "DAD14978-E2B0-40B2-B4F3-337A2A6838BA" : {
     "objectMetadataList" : [
       [
         "DAD14978-E2B0-40B2-B4F3-337A2A6838BA",
-        "Scene"
+        "Scene",
+        "CubeTest"
       ],
       {
         "isExpanded" : true,
@@ -11,8 +34,7 @@
       },
       [
         "DAD14978-E2B0-40B2-B4F3-337A2A6838BA",
-        "Scene",
-        "CubeTest"
+        "Scene"
       ],
       {
         "isExpanded" : true,

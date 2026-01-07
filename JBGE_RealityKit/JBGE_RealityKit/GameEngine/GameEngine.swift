@@ -146,6 +146,8 @@ open class GameEngine {
         ActorManager?.transform.SetParent(SceneManager?.transform)
         MapManager?.transform.SetParent(SceneManager?.transform)
         
+        //SceneManager?.transform.SetParent(MainCamera.transform)
+        
         // We need to call this in order to check for Addressable asset existence
         //Addressables.InitializeAsync();
         
@@ -160,10 +162,21 @@ open class GameEngine {
         return newGameObject
     }
 
+    public func UpdateScreenSize(width: Float, height: Float) {
+        guard height > 0 else { return }
+
+        let aspect = width / height
+        MainCamera.aspect = aspect
+        UICamera.aspect = aspect
+
+        print("[GameMain] Screen Size Changed: \(width) x \(height) --> aspect: \(aspect)")
+    }
+
+
     private func InitializeUI() {
         MainGameObject.addChild(MainCamera)
         MainGameObject.addChild(UICamera)
-        
+
         CinemachineVirtualCamera = nil
         CinemachinePositionComposer = nil
 
@@ -182,62 +195,38 @@ open class GameEngine {
 
         // Reset and align base layer to center
         UIBaseLayer?.ResetTransform()
-        UIBaseLayer?.SetPivot(0.5, 0.5)
-        UIBaseLayer?.SetScale(0.5, 0.5, 1.0)
+        UIBaseLayer?.SetPivot(0.0, 0.0)
+        UIBaseLayer?.SetScale(0.5, 0.5, 1)
+        /*
         UIBaseLayer?.SetPivot(0.5, 0.5)
         UIBaseLayer?.SetRotation(0, 0, 0)
         UIBaseLayer?.SetPivot(0.5, 0.5)
-        UIBaseLayer?.SetPosition(0.5, 0.5, -0.01)
+        UIBaseLayer?.SetPosition(0.5, 0.5, 1.0)
+        */
         UIBaseLayer?.IsVisible = true
 
         // Create UI Layers
         let UIBackgroundLayerID = CreateUILayer("UIBackgroundLayer")
+        
         UIBackgroundLayer = UILayers[UIBackgroundLayerID]
+        
+        // Debug test
+        UIBaseLayer?.SetPivot(0.5, 0.5)
+        UIBackgroundLayer?.SetScale(0.5, 0.5)
         
         print("[GameEngine] Initialize UI Completed.")
         print("===== ENTITY HIERARCHY DUMP =====")
         dumpEntityTree(MainGameObject)
         print("================================")
     }
-/*
-    /// Unity-compatible ViewportToWorldPoint replacement
-    /// - Parameters:
-    ///   - x: Viewport X (0.0 - 1.0)
-    ///   - y: Viewport Y (0.0 - 1.0)
-    ///   - z: Additional depth offset
-    ///   - isUI: true if UI pseudo-orthographic space
-    public func ViewportToWorldPoint(
-        _ x: Float,
-        _ y: Float,
-        _ z: Float,
-        isUI: Bool
-    ) -> Vector3 {
 
-        if isUI {
-            let distance = uiConfig.uiDistance + z
-            return RootScene.projectFromViewport(
-                x: x,
-                y: 1.0 - y,
-                distance: distance,
-                fov: uiConfig.referenceFOV
-            )
-        } else {
-            return RootScene.projectFromViewport(
-                x: x,
-                y: 1.0 - y,
-                distance: z,
-                fov: FOV
-            )
-        }
-    }
-    */
     /// <summary>Creates a new Layer under the base layer</summary>
     /// <returns>ID is generated that can be used to identify the newly created object (if creation fails, returns -1)</returns>
     @discardableResult
     public func CreateUILayer(_ layerName: String = "Layer") -> Int {
         guard let baseLayer = UIBaseLayer else { return -1 }
 
-        let layer = UIComponent(self, layerName, baseLayer)
+        let layer = UIComponent(self, layerName, baseLayer, true, true)
 
         // We need to set the pivot and position of this layer to center of our UICamera
         layer.ResetTransform()
@@ -276,6 +265,55 @@ open class GameEngine {
         layer.Destroy()
         UILayers.removeValue(forKey: id)
     }
+    
+    private func updateUIFollowCamera() {
+        guard let uiBase = UIBaseLayer else { return }
+
+        let camPos = MainCamera.worldPosition
+        let camForward = MainCamera.forward
+
+        let uiPos = camPos + camForward * 1.0
+        uiBase.ThisObject.position = SIMD3<Float>(uiPos.x, uiPos.y, uiPos.z)
+
+        // 回転も同期（画面に正対させる）
+        uiBase.ThisObject.orientation = MainCamera.orientation
+    }
+    
+    private var time: Float = 0
+    public func Update(_ deltaTime: Float) {
+        MainCamera.isEnabled = true
+        UICamera.isEnabled = false
+        time += deltaTime
+
+        let r: Float = 2.0
+        let x = cos(time) * r
+        let z = sin(time) * r + 2.0
+
+        MainCamera.position = Vector3(x, 0.5, z)
+        MainCamera.lookAt(Vector3(0, 0, 0))
+
+        updateUIFollowCamera()
+        
+        /*
+        guard let cam = realityCamera else { return }
+        time += deltaTime
+
+        let r: Float = 2.0
+        let x = cos(time) * r
+        let z = sin(time) * r + 2.0
+        cam.position = SIMD3(x, 0.5, z)
+        cam.look(at: .zero, from: cam.position, relativeTo: nil)
+
+        // 注視点（簡易）
+        MainCamera.lookAt(Vector3(0, 0, 0))
+         */
+        
+        //MainCamera.Render()
+        //UICamera.Render()
+        
+        //print("T = \(t) / deltaTime = \(deltaTime)")
+    }
+    
     
     /*
     public void Update() {

@@ -12,7 +12,7 @@ struct JBGE_RealityKitApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .focusable()
+                //.focusable()
                 // phases -> .down, .up, .repeat
                 .onKeyPress(phases: [.down, .up]) { press in
                     let char = press.key.character
@@ -27,5 +27,6 @@ struct JBGE_RealityKitApp: App {
                     return .handled
                 }
         }
+        .windowResizability(.contentSize)
     }
 }

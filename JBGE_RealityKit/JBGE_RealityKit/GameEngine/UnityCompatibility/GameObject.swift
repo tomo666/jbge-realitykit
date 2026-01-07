@@ -37,6 +37,10 @@ open class GameObject : Entity {
         self.removeFromParent()
     }
 
+    public var worldPosition: SIMD3<Float> {
+        self.position(relativeTo: nil)
+    }
+    
     /// Unity互換: 他のGameObjectのlocalSizeをコピーする
     /// 主に Controller → ThisObject へのサイズ同期用途
     public func SetSizeFrom(_ other: GameObject) {

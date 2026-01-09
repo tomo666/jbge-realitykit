@@ -18,10 +18,10 @@ open class GameMain {
     private var TimeToWaitBeforeSceneStart: Int = 2
     private var TimeToWaitCounter: Float = 0.0
     
-    open func start(gameObject: GameObject) {
+    open func start(_ gameObject: GameObject, _ screenWidth: Float, _ screenHeight: Float) {
         if gameVM == nil {
             gameVM = RealityKitGameVM()
-            gameVM?.GE = GameEngine(gameObject)
+            gameVM?.GE = GameEngine(gameObject, screenWidth, screenHeight)
         }
 
         // The very first script file that will be executed
@@ -52,8 +52,8 @@ open class GameMain {
         //gameVM?.GE?.FixedUpdate(deltaTime: deltaTime)
     }
     
-    open func UpdateScreenSize(width: Float, height: Float) {
+    open func UpdateScreenSize(_ screenWidth: Float, _ screenHeight: Float) {
         guard let ge = gameVM?.GE else { return }
-        gameVM?.GE?.UpdateScreenSize(width: width, height: height)
+        gameVM?.GE?.UpdateScreenSize(screenWidth, screenHeight)
     }
 }

@@ -47,9 +47,15 @@ struct ContentView: View {
                     content.add(gameObject)
                     content.add(rootAnchor)
                     rootAnchor.addChild(gameObject)
-
+                    
+                    // Remove entities already staged from parent and add it to the gameObject
+                    if let cube = sceneEntity.findEntity(named: "CubeTest") {
+                        cube.removeFromParent()
+                        gameObject.addChild(cube)
+                    }
+                    
                     // Unity: Start equivalent
-                    gameMain.start(gameObject: gameObject)
+                    gameMain.start(gameObject, Float(geo.size.width), Float(geo.size.height))
 
                     _ = content.subscribe(to: SceneEvents.Update.self) { event in
                         let deltaTime = Float(event.deltaTime)
@@ -60,8 +66,8 @@ struct ContentView: View {
                 // Update は SceneEvents.Update に一本化
                 if gameMain.IsGameInitialized == false {
                     gameMain.UpdateScreenSize(
-                        width: Float(geo.size.width),
-                        height: Float(geo.size.height)
+                        Float(geo.size.width),
+                        Float(geo.size.height)
                     )
                     gameMain.IsGameInitialized = true
                 }
@@ -69,12 +75,16 @@ struct ContentView: View {
             .onChange(of: geo.size) { oldSize, newSize in
                 guard oldSize != newSize else { return }
                 gameMain.UpdateScreenSize(
-                    width: Float(newSize.width),
-                    height: Float(newSize.height)
+                    Float(newSize.width),
+                    Float(newSize.height)
                 )
             }
         }
-        .frame(minWidth: 960, maxWidth: .infinity, minHeight: 540, maxHeight: .infinity)
+        //.frame(minWidth: 960, maxWidth: .infinity, minHeight: 540, maxHeight: .infinity)
+        .frame(minWidth: 640, maxWidth: .infinity, minHeight: 480, maxHeight: .infinity)
+        //.frame(minWidth: 1024, maxWidth: .infinity, minHeight: 768, maxHeight: .infinity)
+        //.frame(minWidth: 1280, maxWidth: .infinity, minHeight: 720, maxHeight: .infinity)
+        //.frame(minWidth: 1920, maxWidth: .infinity, minHeight: 1080, maxHeight: .infinity)
     }
 }
 

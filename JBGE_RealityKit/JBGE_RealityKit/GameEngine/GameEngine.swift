@@ -136,7 +136,7 @@ open class GameEngine {
     // The global pixel per unit applied to non-UI 2D graphic elements
     public var GlobalPixelPerUnit = 32
     
-    public init(_ gameObject: GameObject) {
+    public init(_ gameObject: GameObject, _ screenWidth: Float, _ screenHeight: Float) {
         MainGameObject = gameObject
 
         SceneManager = CreateGameObject("SceneManager")
@@ -146,10 +146,17 @@ open class GameEngine {
         ActorManager?.transform.SetParent(SceneManager?.transform)
         MapManager?.transform.SetParent(SceneManager?.transform)
         
+        if let cube = MainGameObject.findEntity(named: "CubeTest") {
+            cube.removeFromParent()
+            SceneManager?.addChild(cube)
+        }
+        
         //SceneManager?.transform.SetParent(MainCamera.transform)
         
         // We need to call this in order to check for Addressable asset existence
         //Addressables.InitializeAsync();
+        
+        UpdateScreenSize(screenWidth, screenHeight)
         
         // Initialize UI
         InitializeUI()
@@ -162,7 +169,7 @@ open class GameEngine {
         return newGameObject
     }
 
-    public func UpdateScreenSize(width: Float, height: Float) {
+    public func UpdateScreenSize(_ width: Float, _ height: Float) {
         guard height > 0 else { return }
 
         let aspect = width / height
@@ -195,24 +202,52 @@ open class GameEngine {
 
         // Reset and align base layer to center
         UIBaseLayer?.ResetTransform()
-        UIBaseLayer?.SetPivot(0.0, 0.0)
-        UIBaseLayer?.SetScale(0.5, 0.5, 1)
-        /*
-        UIBaseLayer?.SetPivot(0.5, 0.5)
-        UIBaseLayer?.SetRotation(0, 0, 0)
-        UIBaseLayer?.SetPivot(0.5, 0.5)
-        UIBaseLayer?.SetPosition(0.5, 0.5, 1.0)
-        */
+
+        //UIBaseLayer?.SetPivot(0.5, 0.5)
+        //UIBaseLayer?.SetScale(0.5, 0.5, 1)
+        
+        //UIBaseLayer?.SetPivot(0.0, 0.0)
+        //UIBaseLayer?.SetScale(0.5, 0.5, 1)
+        
+        UIBaseLayer?.Transform(
+            baseScale: Vector3(0.5, 0.5, 1),
+            position: Vector3(0.5, 0.5, 0.0),
+            scale: Vector3(0.5, 0.5, 1.0),
+            rotation: Vector3(0.0, 0.0, 10.0),
+            positionPivot: Vector2(0.0, 0.0),
+            scalePivot: Vector2(0.0, 0.0),
+            rotationPivot: Vector2(0.0, 0.0)
+        )
+        
+        //UIBaseLayer?.SetPivot(0, 0)
+        //UIBaseLayer?.Translate(0.5, 0.5, 0.0)
+        
+        //UIBaseLayer?.SetPivot(0, 0)
+        //UIBaseLayer?.Translate(0.5, 0.5, 0.0, 1.0, 1.0)
+        
+        //UIBaseLayer?.SetPosition(0.25, 0.25, 0.0)
+        
+        // Order is: Translation, Rotation, Scale (RealiKit's order)
+        //UIBaseLayer?.Controller?.transform = RealityKit.Transform(scale: SIMD3<Float>(0.5, 0.5, 1))
+        
+        //UIBaseLayer?.Controller?.transform = RealityKit.Transform(scale: SIMD3<Float>(1, 1, 1), rotation: simd_quatf(ix: 0, iy: 0, iz: 0, r: 1), translation: SIMD3<Float>(2.31, 0.0, 0.0))
+        
+        /*UIBaseLayer?.SetPivot(1.0, 1.0)
+        UIBaseLayer?.SetRotation(0, 0, 45)*/
+        
+        //UIBaseLayer?.SetPivot(0.5, 0.5)
+        //UIBaseLayer?.SetPosition(0.5, 0.5, 1.0)
+        
         UIBaseLayer?.IsVisible = true
 
         // Create UI Layers
-        let UIBackgroundLayerID = CreateUILayer("UIBackgroundLayer")
-        
-        UIBackgroundLayer = UILayers[UIBackgroundLayerID]
+        //let UIBackgroundLayerID = CreateUILayer("UIBackgroundLayer")
+        //UIBackgroundLayer = UILayers[UIBackgroundLayerID]
         
         // Debug test
-        UIBaseLayer?.SetPivot(0.5, 0.5)
-        UIBackgroundLayer?.SetScale(0.5, 0.5)
+        //UIBackgroundLayer?.SetPivot(0.5, 0.5)
+        //UIBackgroundLayer?.SetScale(0.25, 0.25)
+        
         
         print("[GameEngine] Initialize UI Completed.")
         print("===== ENTITY HIERARCHY DUMP =====")
@@ -280,6 +315,22 @@ open class GameEngine {
     }
     
     private var time: Float = 0
+
+    public func Update(_ deltaTime: Float) {
+        time += deltaTime
+
+        guard let scene = SceneManager else { return }
+
+        let r: Float = 2.0
+        let x = cos(time) * r
+        let z = sin(time) * r
+
+        // ワールドを動かす（＝カメラが周回して見える）
+        scene.position = SIMD3<Float>(-x, 0, -z)
+    }
+    
+    /*
+    private var time: Float = 0
     public func Update(_ deltaTime: Float) {
         MainCamera.isEnabled = true
         UICamera.isEnabled = false
@@ -313,7 +364,7 @@ open class GameEngine {
         
         //print("T = \(t) / deltaTime = \(deltaTime)")
     }
-    
+    */
     
     /*
     public void Update() {

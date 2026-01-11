@@ -28,11 +28,11 @@ public class IDGamePad {
     public var IsSelectPressed: Bool = false
     public var IsStartPressed: Bool = false
 
-    public var LeftStickValue: Vector2 = Vector2(0, 0)
+    public var LeftStickValue: SIMD2<Float> = SIMD2(0, 0)
     public var LeftTriggerValue: Float = 0.0
-    public var RightStickValue: Vector2 = Vector2(0, 0)
+    public var RightStickValue: SIMD2<Float> = SIMD2(0, 0)
     public var RightTriggerValue: Float = 0.0
-    public var DPadValue: Vector2 = Vector2(0, 0)
+    public var DPadValue: SIMD2<Float> = SIMD2(0, 0)
     
     public var IsDPadNorthPressed: Bool {
         return DPadValue.x == 0 && DPadValue.y == 1

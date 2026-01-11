@@ -27,5 +27,5 @@ public class IDMouse {
         return false
     }
 
-    public var MousePosition: Vector2 = Vector2(0, 0)
+    public var MousePosition: SIMD2<Int> = SIMD2(0, 0)
 }

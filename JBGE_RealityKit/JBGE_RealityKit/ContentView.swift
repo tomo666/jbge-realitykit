@@ -37,7 +37,7 @@ struct ContentView: View {
 
     private let loop = GameLoopDriver()
     private var gameMain = GameMain()
-    private var gameObject: GameObject = GameObject("GameMain")
+    private var gameObject: JBEntity = JBEntity("GameMain")
 
     var body: some View {
         GeometryReader { geo in
@@ -80,8 +80,8 @@ struct ContentView: View {
                 )
             }
         }
-        .frame(minWidth: 1280, maxWidth: .infinity, minHeight: 800, maxHeight: .infinity)
-        //.frame(minWidth: 960, maxWidth: .infinity, minHeight: 540, maxHeight: .infinity)
+        //.frame(minWidth: 1280, maxWidth: .infinity, minHeight: 800, maxHeight: .infinity)
+        .frame(minWidth: 960, maxWidth: .infinity, minHeight: 540, maxHeight: .infinity)
         //.frame(minWidth: 640, maxWidth: .infinity, minHeight: 480, maxHeight: .infinity)
         //.frame(minWidth: 1024, maxWidth: .infinity, minHeight: 768, maxHeight: .infinity)
         //.frame(minWidth: 1280, maxWidth: .infinity, minHeight: 720, maxHeight: .infinity)

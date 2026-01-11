@@ -18,7 +18,7 @@ open class GameMain {
     private var TimeToWaitBeforeSceneStart: Int = 2
     private var TimeToWaitCounter: Float = 0.0
     
-    open func start(_ gameObject: GameObject, _ screenWidth: Float, _ screenHeight: Float) {
+    open func start(_ gameObject: JBEntity, _ screenWidth: Float, _ screenHeight: Float) {
         if gameVM == nil {
             gameVM = RealityKitGameVM()
             gameVM?.GE = GameEngine(gameObject, screenWidth, screenHeight)
@@ -54,6 +54,6 @@ open class GameMain {
     
     open func UpdateScreenSize(_ screenWidth: Float, _ screenHeight: Float) {
         guard let ge = gameVM?.GE else { return }
-        gameVM?.GE?.UpdateScreenSize(screenWidth, screenHeight)
+        ge.UpdateScreenSize(screenWidth, screenHeight)
     }
 }
